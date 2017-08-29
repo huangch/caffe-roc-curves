@@ -138,7 +138,7 @@ class PythonROCCurves(caffe.Layer):
                 plt.ylim([0.0, 1.01])
                 plt.xlabel('False Positive Rate')
                 plt.ylabel('True Positive Rate')
-                plt.title('Some extension of Receiver operating characteristic to multi-class')
+                plt.title('Receiver operating characteristic to multi-class')
                 plt.legend(loc="lower right")
 
             
