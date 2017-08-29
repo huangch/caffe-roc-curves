@@ -59,7 +59,7 @@ class PythonROCCurves(caffe.Layer):
             for i in range(self.n_classes):
                 y_test[np.where(self.y_gt==i),i]=1
                     
-            if self.n_classes == 3:
+            if self.n_classes == 2:
                 # Compute ROC curve and ROC area for each class
                 fpr, tpr, _ = roc_curve(y_test[:,1], self.y_score[:,1])
                 roc_auc = auc(fpr, tpr)
