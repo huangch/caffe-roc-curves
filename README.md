@@ -1,6 +1,6 @@
 # caffe-roc-curves
 Pyhton layer for the Caffe [Caffe](https://github.com/BVLC/caffe) deep learning framework to compute the accuracy and plot the receiver operating characteristic(ROC) curves.
-This layer will plot the ROC curves of the TEST predictions after the whole TEST set have been processed. It will also work as an accuracy layer, providing Caffe with the predictions accuracy on the TEST set.
+This layer will plot the ROC curves of the TEST predictions after the TEST set of each test_iter have been processed. It will also work as an accuracy layer, providing Caffe with the predictions accuracy on the TEST set.
 
 The is used as an accuracy layer in the prototxt file like:
 	
@@ -22,4 +22,5 @@ The is used as an accuracy layer in the prototxt file like:
 	  }
 	}
 
-There is a working example in the `examples` folder, which must be copied in `caffe/examples` folder in order for the relative paths to work. The file `python_confmat.py` must be copied in `caffe/examples/mnist` to work for the example, but for your own usage you can place it anywhere as long as the path is included in your `$PYTHONPATH`.
+![](binary-class-roc-curve.png)
+![](multi-class-roc-curve.png)
