@@ -2,21 +2,14 @@ import caffe
 import json
 import numpy as np
 import sys
-
-import sklearn.metrics
-
-import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
-
 from sklearn.metrics import roc_curve, auc
-
-class PythonConfMat(caffe.Layer):
+from scipy import interp
+class PythonROCCurves(caffe.Layer):
     """
     Compute the Accuracy with a Python Layer
     """
-
-
 
     def setup(self, bottom, top):
         # check input pair
@@ -26,12 +19,17 @@ class PythonConfMat(caffe.Layer):
         self.num_labels = bottom[0].channels
         params = json.loads(self.param_str)
         self.test_iter = params['test_iter']
-        self.conf_matrix = np.zeros((self.num_labels, self.num_labels))
-        self.current_iter = 0
         
-        self.n_classes = 2
-        self.y_test = np.empty((0))
-        self.y_score = np.empty((0))
+        self.show = 'show' in params and params['show'] or 'yes'
+        self.savefig = 'savefig' in params and params['savefig'] or ''
+        self.figformat = 'figformat' in params and params['figformat'] or 'png'
+        
+        self.current_iter = 0
+        self.savefig_iter = 0
+        
+        self.n_classes = self.num_labels
+        self.y_gt = np.empty((0))
+        self.y_score = np.empty((0, self.n_classes))
 
     def reshape(self, bottom, top):
         # bottom[0] are the net's outputs
@@ -46,57 +44,113 @@ class PythonConfMat(caffe.Layer):
 
     def forward(self, bottom, top):
         self.current_iter += 1
-
         # predicted outputs
         pred = np.argmax(bottom[0].data, axis=1)
         accuracy = np.sum(pred == bottom[1].data).astype(np.float32) / bottom[0].num
         top[0].data[...] = accuracy
 
-        # compute confusion matrix
-        self.conf_matrix += sklearn.metrics.confusion_matrix(bottom[1].data, pred, labels=range(self.num_labels))
-        
-        n_classes = bottom[0].data.shape[1]
-        self.y_test = np.append(self.y_test, bottom[1].data)
-        self.y_score = np.append(self.y_score, bottom[0].data[:,1])
+        self.y_gt = np.append(self.y_gt, bottom[1].data)        
+        self.y_score = np.vstack((self.y_score, bottom[0].data))
             
         if self.current_iter == self.test_iter:
             self.current_iter = 0
-            sys.stdout.write('\nCAUTION!! test_iter = %i. Make sure this is the correct value' % self.test_iter)
-            sys.stdout.write('\n"param_str: \'{"test_iter":%i}\'" has been set in the definition of the PythonLayer' % self.test_iter)
-            sys.stdout.write('\n\nConfusion Matrix')
-            sys.stdout.write('\t'*(self.num_labels-2)+'| Accuracy')
-            sys.stdout.write('\n'+'-'*8*(self.num_labels+1))
-            sys.stdout.write('\n')
-            for i in range(len(self.conf_matrix)):
-                for j in range(len(self.conf_matrix[i])):
-                    sys.stdout.write(str(self.conf_matrix[i][j].astype(np.int))+'\t')
-                sys.stdout.write('| %3.2f %%' % (self.conf_matrix[i][i]*100 / self.conf_matrix[i].sum()))
-                sys.stdout.write('\n')
-            sys.stdout.write('Number of test samples: %i \n\n' % self.conf_matrix.sum())
-            # reset conf_matrix for next test phase
-            self.conf_matrix = np.zeros((self.num_labels, self.num_labels))
             
-            # Compute ROC curve and ROC area for each class
-            fpr, tpr, _ = roc_curve(self.y_test, self.y_score)
-            roc_auc = auc(fpr, tpr)
-            
-            # Compute micro-average ROC curve and ROC area
-            fpr_micro, tpr_micro, _ = roc_curve(self.y_test.ravel(), self.y_score.ravel())
-            roc_auc_micro = auc(fpr, tpr)
+            y_test = np.zeros((self.y_gt.shape[0], self.n_classes))
+            for i in range(self.n_classes):
+                y_test[np.where(self.y_gt==i),i]=1
+                    
+            if self.n_classes == 3:
+                # Compute ROC curve and ROC area for each class
+                fpr, tpr, _ = roc_curve(y_test[:,1], self.y_score[:,1])
+                roc_auc = auc(fpr, tpr)
+                 
+                # Compute micro-average ROC curve and ROC area
+                fpr_micro, tpr_micro, _ = roc_curve(y_test.ravel(), self.y_score.ravel())
+                roc_auc_micro = auc(fpr, tpr)
+     
+                # Plot of a ROC curve for a specific class            
+                plt.figure()
+                lw = 2
+                plt.plot(fpr, tpr, color='darkorange',
+                         lw=lw, label='ROC curve (area = %0.3f)' % roc_auc)
+                plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+                plt.xlim([-0.01, 1.0])
+                plt.ylim([0.0, 1.01])
+                plt.xlabel('False Positive Rate')
+                plt.ylabel('True Positive Rate')
+                plt.title('Receiver Operating Characteristics')
+                plt.legend(loc="lower right")
 
-            # Plot of a ROC curve for a specific class            
-            plt.figure()
-            lw = 2
-            plt.plot(fpr, tpr, color='darkorange',
-                     lw=lw, label='ROC curve (area = %0.3f)' % roc_auc)
-            plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-            plt.xlim([-0.005, 1.0])
-            plt.ylim([0.0, 1.01])
-            plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate')
-            plt.title('Receiver Operating Characteristics')
-            plt.legend(loc="lower right")
-            plt.show()
+
+
+            else:
+                # Compute ROC curve and ROC area for each class
+                    
+                fpr = dict()
+                tpr = dict()
+                roc_auc = dict()
+                for i in range(self.n_classes):
+                    fpr[i], tpr[i], _ = roc_curve(y_test[:, i], self.y_score[:, i])
+                    roc_auc[i] = auc(fpr[i], tpr[i])
+                
+                print(self.y_score.shape)
+                print(self.y_score.ravel().shape)
+                # Compute micro-average ROC curve and ROC area
+                fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), self.y_score.ravel())
+                roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+    
+                # First aggregate all false positive rates
+                all_fpr = np.unique(np.concatenate([fpr[i] for i in range(self.n_classes)]))
+                
+                # Then interpolate all ROC curves at this points
+                mean_tpr = np.zeros_like(all_fpr)
+                for i in range(self.n_classes):
+                    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+                
+                # Finally average it and compute AUC
+                mean_tpr /= self.n_classes
+                
+                fpr["macro"] = all_fpr
+                tpr["macro"] = mean_tpr
+                roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+                
+                # Plot all ROC curves
+                plt.figure()
+                plt.plot(fpr["micro"], tpr["micro"],
+                         label='micro-average ROC curve (area = {0:0.3f})'
+                               ''.format(roc_auc["micro"]),
+                         color='deeppink', linestyle=':', linewidth=4)
+                
+                plt.plot(fpr["macro"], tpr["macro"],
+                         label='macro-average ROC curve (area = {0:0.3f})'
+                               ''.format(roc_auc["macro"]),
+                         color='navy', linestyle=':', linewidth=4)
+                
+                colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+                for i, color in zip(range(self.n_classes), colors):
+                    plt.plot(fpr[i], tpr[i], color=color, lw=2,
+                             label='ROC curve of class {0} (area = {1:0.3f})'
+                             ''.format(i, roc_auc[i]))
+                
+                plt.plot([0, 1], [0, 1], 'k--', lw=2)
+                plt.xlim([-0.01, 1.0])
+                plt.ylim([0.0, 1.01])
+                plt.xlabel('False Positive Rate')
+                plt.ylabel('True Positive Rate')
+                plt.title('Some extension of Receiver operating characteristic to multi-class')
+                plt.legend(loc="lower right")
+
+            
+            if self.show == 'yes':
+                plt.show()
+                
+            if self.savefig != '':
+                fig = plt.gcf()
+                fig.savefig(self.savefig+'-'+str(self.savefig_iter)+'.'+self.figformat)
+                self.savefig_iter += 1
+            
+            self.y_gt = np.empty((0))
+            self.y_score = np.empty((0, self.n_classes))
 
 
     def backward(self, top, propagate_down, bottom):
