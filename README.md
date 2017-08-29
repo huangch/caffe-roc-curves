@@ -1,4 +1,4 @@
-# caffe-conf-matrix
+# caffe-roc-curves
 Pyhton layer for the Caffe [Caffe](https://github.com/BVLC/caffe) deep learning framework to compute the accuracy and plot the receiver operating characteristic(ROC) curves.
 This layer will plot the ROC curves of the TEST predictions after the whole TEST set have been processed. It will also work as an accuracy layer, providing Caffe with the predictions accuracy on the TEST set.
 
