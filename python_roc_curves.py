@@ -30,6 +30,8 @@ class PythonROCCurves(caffe.Layer):
         self.n_classes = self.num_labels
         self.y_gt = np.empty((0))
         self.y_score = np.empty((0, self.n_classes))
+        
+        self.fig1 = plt.figure()
 
     def reshape(self, bottom, top):
         # bottom[0] are the net's outputs
@@ -69,11 +71,10 @@ class PythonROCCurves(caffe.Layer):
                 roc_auc_micro = auc(fpr, tpr)
      
                 # Plot of a ROC curve for a specific class            
-                plt.figure()
-                lw = 2
+                # fig1 = plt.figure()
                 plt.plot(fpr, tpr, color='darkorange',
-                         lw=lw, label='ROC curve (area = %0.3f)' % roc_auc)
-                plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+                         lw=2, label='ROC curve (area = %0.3f)' % roc_auc)
+                plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
                 plt.xlim([-0.01, 1.0])
                 plt.ylim([0.0, 1.01])
                 plt.xlabel('False Positive Rate')
@@ -115,7 +116,7 @@ class PythonROCCurves(caffe.Layer):
                 roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
                 
                 # Plot all ROC curves
-                plt.figure()
+                # fig1 = plt.figure()
                 plt.plot(fpr["micro"], tpr["micro"],
                          label='micro-average ROC curve (area = {0:0.3f})'
                                ''.format(roc_auc["micro"]),
@@ -143,6 +144,7 @@ class PythonROCCurves(caffe.Layer):
             
             if self.show == 'yes':
                 plt.show()
+                plt.close(self.fig1)
                 
             if self.savefig != '':
                 fig = plt.gcf()
