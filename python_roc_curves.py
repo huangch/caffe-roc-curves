@@ -30,9 +30,8 @@ class PythonROCCurves(caffe.Layer):
         self.n_classes = self.num_labels
         self.y_gt = np.empty((0))
         self.y_score = np.empty((0, self.n_classes))
+	self.fig = plt.figure()
         
-        self.fig1 = plt.figure()
-
     def reshape(self, bottom, top):
         # bottom[0] are the net's outputs
         # bottom[1] are the ground truth labels
@@ -138,15 +137,14 @@ class PythonROCCurves(caffe.Layer):
             
             if self.show == 'yes':
                 plt.show()
+		plt.close(self.fig)
                 
             if self.savefig != '':
-                self.fig1.savefig(self.savefig+'-'+str(self.savefig_iter)+'.'+self.figformat)
+		plt.gcf().savefig(self.savefig+'-'+str(self.savefig_iter)+'.'+self.figformat)
                 self.savefig_iter += 1
             
-            plt.close(self.fig1)
-            
-            self.y_gt = np.empty((0))
-            self.y_score = np.empty((0, self.n_classes))
+            # self.y_gt = np.empty((0))
+            # self.y_score = np.empty((0, self.n_classes))
 
     def backward(self, top, propagate_down, bottom):
         pass
