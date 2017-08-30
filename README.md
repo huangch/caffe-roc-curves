@@ -27,8 +27,8 @@ The is used as an accuracy layer in the prototxt file like:
 	  }
 	}
 
-## Examples of ROC Plotting
-Binary Classification
+## Examples of Binary Classification
 ![](binary-class-roc-curve.png)
-Multi-class Classification
+
+## Examples of Multi-class Classification
 ![](multi-class-roc-curve.png)
