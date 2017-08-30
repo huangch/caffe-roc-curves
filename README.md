@@ -15,12 +15,20 @@ The is used as an accuracy layer in the prototxt file like:
 	    module: 'python_roc_curves'
 	    # the layer name -- the class name in the module
 	    layer: 'PythonROCCurves'
-	    param_str: '{"test_iter":100}'
+	    # a set of parameters, incl:
+	    # test_iter: number of iterations the ROC plotting is triggered
+	    # show: yes to show ROC plot in every test_iter iterations
+	    # savefig: the ROC plot can be stored into image files with this parameter as the file name prefix.
+	    # figformat: file name extension as the format. 
+	    param_str: '{"test_iter":100, "show": "yes", "savefig": "result", "figformat", "png"}'
 	  }
 	  include {
 	    phase: TEST
 	  }
 	}
 
+## Examples of ROC Plotting
+Binary Classification
 ![](binary-class-roc-curve.png)
+Multi-class Classification
 ![](multi-class-roc-curve.png)

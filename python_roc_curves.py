@@ -70,8 +70,7 @@ class PythonROCCurves(caffe.Layer):
                 fpr_micro, tpr_micro, _ = roc_curve(y_test.ravel(), self.y_score.ravel())
                 roc_auc_micro = auc(fpr, tpr)
      
-                # Plot of a ROC curve for a specific class            
-                # fig1 = plt.figure()
+                # Plot of a ROC curve for a specific class  
                 plt.plot(fpr, tpr, color='darkorange',
                          lw=2, label='ROC curve (area = %0.3f)' % roc_auc)
                 plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
@@ -81,9 +80,6 @@ class PythonROCCurves(caffe.Layer):
                 plt.ylabel('True Positive Rate')
                 plt.title('Receiver Operating Characteristic (ROC) Curve')
                 plt.legend(loc="lower right")
-
-
-
             else:
                 # Compute ROC curve and ROC area for each class
                     
@@ -116,7 +112,6 @@ class PythonROCCurves(caffe.Layer):
                 roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
                 
                 # Plot all ROC curves
-                # fig1 = plt.figure()
                 plt.plot(fpr["micro"], tpr["micro"],
                          label='micro-average ROC curve (area = {0:0.3f})'
                                ''.format(roc_auc["micro"]),
@@ -140,20 +135,18 @@ class PythonROCCurves(caffe.Layer):
                 plt.ylabel('True Positive Rate')
                 plt.title('Receiver Operating Characteristic (ROC) Curves')
                 plt.legend(loc="lower right")
-
             
             if self.show == 'yes':
                 plt.show()
-                plt.close(self.fig1)
                 
             if self.savefig != '':
-                fig = plt.gcf()
-                fig.savefig(self.savefig+'-'+str(self.savefig_iter)+'.'+self.figformat)
+                self.fig1.savefig(self.savefig+'-'+str(self.savefig_iter)+'.'+self.figformat)
                 self.savefig_iter += 1
+            
+            plt.close(self.fig1)
             
             self.y_gt = np.empty((0))
             self.y_score = np.empty((0, self.n_classes))
-
 
     def backward(self, top, propagate_down, bottom):
         pass
